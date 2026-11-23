@@ -721,12 +721,17 @@ function render(now) {
 
   if (state === "title") {
     const t = now / 1000;
-    for (let i = 0; i < 3; i++) {
-      const r = (t * 120 + i * 140) % 420;
-      ctx.strokeStyle = ink((1 - r / 420) * 0.5); ctx.lineWidth = 1.5;
+    // sonar: un impulso ogni 3 secondi, veloce all'uscita e lento al bordo, seguito dalla sua eco
+    const P = 3, ph = (t % P) / P;
+    for (const [lag, k] of [[0, 0.6], [0.12, 0.28], [0.24, 0.12]]) {
+      const q = ph - lag; if (q <= 0) continue;
+      const r = 430 * (1 - Math.pow(1 - q, 2.4));
+      ctx.strokeStyle = ink(Math.pow(1 - q, 1.6) * k); ctx.lineWidth = 1.5;
       ctx.beginPath(); ctx.arc(W / 2, H / 2 - 40, r, 0, Math.PI * 2); ctx.stroke();
     }
-    ctx.fillStyle = ink(1); ctx.beginPath(); ctx.arc(W / 2, H / 2 - 40, 9, 0, Math.PI * 2); ctx.fill();
+    const blip = Math.max(0, 1 - ph * 6);
+    if (blip > 0) { const bg = ctx.createRadialGradient(W / 2, H / 2 - 40, 0, W / 2, H / 2 - 40, 40); bg.addColorStop(0, ink(0.35 * blip)); bg.addColorStop(1, ink(0)); ctx.fillStyle = bg; ctx.beginPath(); ctx.arc(W / 2, H / 2 - 40, 40, 0, Math.PI * 2); ctx.fill(); }
+    ctx.fillStyle = ink(1); ctx.beginPath(); ctx.arc(W / 2, H / 2 - 40, 9 + blip * 2, 0, Math.PI * 2); ctx.fill();
     text("E  C  O", W / 2, H / 2 + 50, 44, 1, 500);
     text(save.unlocked > 1 ? `Tocca per giocare il livello ${save.unlocked}` : "Tocca per iniziare", W / 2, H / 2 + 102, 16, 0.65);
     const got = Object.values(save.stars).reduce((a, b) => a + b, 0);
